@@ -1,0 +1,15 @@
+INTRODUCTION
+============
+
+This takes an arbitrary length string and produces a 160-bit [20 byte] value. It takes no command line arguments, reads the string from standard input, computes the hash, and prints the result to standard output.
+
+RIPEMD first extends the string by adding enough padding to get to 8 bytes less than an exact multiple of 64 bytes. The padding consists of a byte of 0x80 followed by as many bytes of 0x00 as are needed. It then appends the 64-bit length of the string in BITS (bits = 8 times number of bytes) in little-endian form. It initialized the array CV [0] through CV [4] to initial values (and I have put these into a file ripemd-consts.c for your use). Then it processes a block of 64 bytes [16 32-bit words] at a time. It calls these 16 words X0 through X15. It copies CV [0] into Al and Ar, CV [1] into Bl and Br, CV [2] into Cl and Cr, CV [3] into Dl and Dr, and CV [4] into El and Er. It does 2 independent 5-round transformations on the X’s: a ”left” set, which works with Al through El, and a ”right” set, which works with Ar through Er. Each round consists of 16 steps. The steps look very similar. Each step consits of the (simutaneous) actions A   E, B   rollsh amt(ind, j)(A + fj(B,C,D) + Xind + Kj) + E, C   B, D   rol10(C), and E   D. In this Fj(B,C,D) is a function that depends on the round number; on the left side, j is the round number; on the right side, j is 4-the round number. [I.e., in all the steps in round 0 on the left side, use F0; in all the steps in round 0 on the right side, use f4; for round 1, the left side uses f1 and the right side uses f3; etc.] Kj is a constant that depends on the round number and which side (and not the step number). The quantity ind is a permutation of the step number; on the left side, in round 0 it is i, in round 1 it is (i), in round 2 it is ((i)), in round 3 it is (((i))), and in round 4 it is ((((i)))); on the right side, in round 0 it is (i), in round 1 it is ((i)), in round 2 it is (((i))), in round 3 it is ((((i)))), and in round 4 it is (((((i))))). (In the file ripemd-consts.c I have put arrays K l and K r for the constants K, arrays rho and pi for the permutations  and , an array lsh amt indexed by the round number and the index of X, an array CV with their initial value, and a (real) function f (round number, B, C, D).) At the end of each block [2 sides of 5 rounds of 16 steps] update the CV array by (simultaneously) doing CV[0] = CV[1] + Cl + Dr, CV[1] = CV[2] + Dl + Er, CV[2] = CV[3] + El + Ar, CV[3] = CV[4] + Al + Br, and CV[4] = CV[0] + Bl + Cr.
+
+EXAMPLE USE
+===========
+
+==> ripemd
+
+Message: abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+hashcode: 92d8834b48caa12fd79fb995053ef51037d4eadc
